@@ -1,0 +1,15 @@
+apiversion: v1
+kind: Pod
+metadata:
+  name: gcp-my-pod-sc
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:latest
+      volumeMounts:
+        - mountPath: /gcp-my-pod-persistent-volume
+          name: gcp-pv
+  volumes:
+    - name: gcp-pv
+      persistentVolumeClaim:
+        claimName: gcp-my-pod-pvc-sc
