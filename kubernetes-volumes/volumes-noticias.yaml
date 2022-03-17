@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volumes-noticias
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:latest
+      volumeMounts:
+        - mountPath: /volume-dentro-do-container
+          name: volumes-noticias
+    - name: jenkins-container
+      image: jenkins/jenkins:alpine
+      volumeMounts:
+        - mountPath: /volume-dentro-do-container
+          name: volumes-noticias
+  volumes:
+    - name: volumes-noticias
+      hostPath:
+        path: /home/docker/volumes-noticias
+        type: Directory

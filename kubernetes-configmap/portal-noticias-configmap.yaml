@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-noticias-configmap
+data:
+  #Check kubectl get nodes to get IP and change it
+  IP_SISTEMA: http://172.26.172.100:30001
