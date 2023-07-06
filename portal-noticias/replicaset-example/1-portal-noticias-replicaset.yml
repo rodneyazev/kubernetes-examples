@@ -1,0 +1,26 @@
+# grupo específico da v1
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: portal-noticias-replicaset
+spec:
+  template:
+    metadata:
+      name: portal-noticias
+      labels:
+        #tem que ser igual
+        app: portal-noticias
+    spec:
+      containers:
+        - name: portal-noticias
+          image: aluracursos/portal-noticias:1
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: portal-noticias-configmap
+  replicas: 3
+  selector:
+    matchLabels:
+      #tem que ser igual
+      app: portal-noticias

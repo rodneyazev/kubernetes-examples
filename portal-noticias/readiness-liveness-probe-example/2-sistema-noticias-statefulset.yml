@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sistema-noticias-statefulset
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sistema-noticias
+      name: sistema-noticias
+    spec:
+      containers:
+        - name: sistema-noticias
+          image: aluracursos/sistema-noticias:1
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: sistema-noticias-configmap
+          volumeMounts:
+            - name: imagens
+              mountPath: /var/www/html/uploads
+            - name: sessao
+              mountPath: /tmp
+          # Se não conseguir testar 3 vezes, reinicia a aplicação
+          livenessProbe:
+            httpGet:
+              # / => http://localhost:80/
+              path: /
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 3
+            initialDelaySeconds: 20
+          # Se não conseguir testar 5 vezes, na 6a vez ele vai enviar as requisições mesmo assim
+          # ignorando o readinessProbe. Pronta para receber requisições quando retornar entre
+          # 200 inclusive e 400 exclusive
+          readinessProbe:
+            httpGet:
+              # / => http://localhost:80/
+              path: /inserir_noticias.php
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 5
+            # depois que o pod iniciar / tiver subindo, pode começar a testar
+            initialDelaySeconds: 3
+      volumes:
+        - name: imagens
+          persistentVolumeClaim:
+            claimName: imagens-pvc
+        - name: sessao
+          persistentVolumeClaim:
+            claimName: sessao-pvc
+  selector:
+    matchLabels:
+      app: sistema-noticias
+  serviceName: sistema-noticias-svc

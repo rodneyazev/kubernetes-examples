@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-2-svc
+spec:
+  # containers: ? não ! porque é um serviço
+  type: ClusterIP
+  # diz ao serviço que vai selecionar todos os recursos que tiverem a chance nginx-pod-2
+  selector:
+    app: nginx-pod-2
+  # diz ao serviço que vai receber na porta 80 e despachar na porta 80
+  ports:
+    # - port: 80
+    #
+    # Porta 9000 é diferente da porta do pod, logo é preciso especificar a porta do pod, também
+    # Ou seja, ouve na 9000 mas despacha na 80, que é a porta do pod
+    - port: 9000
+      targetPort: 80

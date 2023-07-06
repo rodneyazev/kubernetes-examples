@@ -1,0 +1,49 @@
+# grupo específico da v1 - só trocamos kind: ReplicaSet para Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-noticias-deployment
+spec:
+  template:
+    metadata:
+      name: portal-noticias
+      labels:
+        #tem que ser igual
+        app: portal-noticias
+    spec:
+      containers:
+        - name: portal-noticias
+          image: aluracursos/portal-noticias:1
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: portal-noticias-configmap
+          livenessProbe:
+            httpGet:
+              # / => http://localhost:80/
+              path: /
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 3
+            initialDelaySeconds: 20
+          # Se não conseguir testar 5 vezes, na 6a vez ele vai enviar as requisições mesmo assim
+          # ignorando o readinessProbe. Pronta para receber requisições quando retornar entre
+          # 200 inclusive e 400 exclusive
+          readinessProbe:
+            httpGet:
+              # / => http://localhost:80/
+              path: /
+              port: 80
+            periodSeconds: 10
+            failureThreshold: 5
+            # depois que o pod iniciar / tiver subindo, pode começar a testar
+            initialDelaySeconds: 3
+          resources:
+            requests:
+              cpu: 10m
+  replicas: 3
+  selector:
+    matchLabels:
+      #tem que ser igual
+      app: portal-noticias

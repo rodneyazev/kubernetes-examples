@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-volume
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      volumeMounts:
+        - mountPath: /nginx-volume
+          name: primeiro-volume
+  volumes:
+    - name: primeiro-volume
+      hostPath:
+        # mkdir /mnt/wsl/secrets
+        path: /run/desktop/mnt/host/wsl/secrets
+        type: DirectoryOrCreate

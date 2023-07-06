@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-1-loadbalancer
+spec:
+  # containers: ? não ! porque é um serviço
+  type: LoadBalancer
+  ports:
+    # Se definir apenas por 80, ele assume que o targetPort também seja 80
+    - port: 80
+      #targetPort: 80
+      #nodePort: 30000-32767
+  selector:
+    app: nginx-pod-1

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nginx-pv
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    # mkdir /mnt/wsl/secrets
+    # path: "/mnt/data"
+    path: /run/desktop/mnt/host/wsl/secrets
+    type: DirectoryOrCreate
