@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: default
+  labels:
+    app: rabbitmq
+data:
+  RABBITMQ_DEFAULT_USER: rabbitmq
+  RABBITMQ_DEFAULT_PASS: rabbitmq
