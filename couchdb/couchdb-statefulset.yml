@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: couchdb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: couchdb
+  template:
+    metadata:
+      annotations:
+          kubernetes.io/hostname: "couchdb"
+      labels:
+        app: couchdb
+    spec:
+      containers:
+        - name: couchdb
+          image: couchdb
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5984
+          envFrom:
+            - configMapRef:
+                name: couchdb-config
+          volumeMounts:
+            - mountPath: /usr/local/var/lib/couchdb
+              name: couchdb-vm
+      volumes:
+        - name: couchdb-vm
+          persistentVolumeClaim:
+            claimName: couchdb-pvc

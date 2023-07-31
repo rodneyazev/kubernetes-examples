@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-config
+  namespace: default
+  labels:
+    app: influxdb
+data:
+  DOCKER_INFLUXDB_INIT_MODE: setup
+  DOCKER_INFLUXDB_INIT_USERNAME: influxdb
+  DOCKER_INFLUXDB_INIT_PASSWORD: influxdb
+  DOCKER_INFLUXDB_INIT_ORG: my.influxdb.org
+  DOCKER_INFLUXDB_INIT_BUCKET: influxdb
+  DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: influxdb

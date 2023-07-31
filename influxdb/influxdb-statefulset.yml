@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      annotations:
+          kubernetes.io/hostname: "influxdb"
+      labels:
+        app: influxdb
+    spec:
+      containers:
+        - name: influxdb
+          image: influxdb:2.6-alpine
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: influxdb-config
+          volumeMounts:
+            - mountPath: /var/lib/influxdb2
+              name: influxdb-vm
+      volumes:
+        - name: influxdb-vm
+          persistentVolumeClaim:
+            claimName: influxdb-pvc

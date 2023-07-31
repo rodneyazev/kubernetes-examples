@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-svc
+  labels:
+    app: jenkins
+spec:
+  type: NodePort
+  ports:
+    - name: jenkins-port
+      port: 8080
+    - name: for-spring-boot-port
+      port: 8085
+  selector:
+    app: jenkins

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      annotations:
+          kubernetes.io/hostname: "cassandra"
+      labels:
+        app: cassandra
+    spec:
+      containers:
+        - name: cassandra
+          image: cassandra:latest
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 9042
+          envFrom:
+            - configMapRef:
+                name: cassandra-config
+          volumeMounts:
+            - mountPath: /var/lib/cassandra
+              name: cassandra-vm
+      volumes:
+        - name: cassandra-vm
+          persistentVolumeClaim:
+            claimName: cassandra-pvc

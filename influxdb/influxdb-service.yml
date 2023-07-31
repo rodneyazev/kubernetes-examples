@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-svc
+  name: influxdb-svc
   labels:
-    app: postgres
+    app: influxdb
 spec:
   type: NodePort
   ports:
-    - port: 5432
+    - port: 8086
   selector:
-    app: postgres
+    app: influxdb

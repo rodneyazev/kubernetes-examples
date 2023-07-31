@@ -9,6 +9,8 @@ spec:
       app: postgres
   template:
     metadata:
+      annotations:
+        kubernetes.io/hostname: "postgres"
       labels:
         app: postgres
     spec:
