@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oracle-config
+  namespace: default
+  labels:
+    app: oracle
+data:
+  ORACLE_SID: xe
+  ORACLE_PDB: ORCLPDB1
+  ORACLE_PWD: Oracle_123

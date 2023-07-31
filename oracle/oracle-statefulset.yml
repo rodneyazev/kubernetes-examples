@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oracle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oracle
+  template:
+    metadata:
+      annotations:
+          kubernetes.io/hostname: "oracle"
+      labels:
+        app: oracle
+    spec:
+      containers:
+        - name: oracle
+          image: container-registry.oracle.com/database/express:latest
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 1521
+          envFrom:
+            - configMapRef:
+                name: oracle-config
+          volumeMounts:
+            - mountPath: /mnt/data/oracle/oradata
+              name: oracledb
+      volumes:
+        - name: oracledb
+          persistentVolumeClaim:
+            claimName: oracle-pvc

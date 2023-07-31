@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-svc
+  labels:
+    app: oracle
+spec:
+  type: NodePort
+  ports:
+    - port: 1521
+  selector:
+    app: oracle
