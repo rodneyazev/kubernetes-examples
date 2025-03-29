@@ -8,7 +8,7 @@ Kubernetes Pods created with the help of <a href="https://claude.ai/">Claude</a>
 
 ## Users and passwords
 
-### <em>You will find the credentials and the information you need in .yml files.</em>
+### <em>You will find the credentials and further information in .yml files.</em>
 
 ## For your information
 <em>Some pods take a while to start, so be patient.</em><br>
