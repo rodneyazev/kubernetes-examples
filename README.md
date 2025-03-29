@@ -4,14 +4,14 @@
 
 # About Kubernetes Pods
 
-Pods created with the help of <a href="https://claude.ai/">Claude</a> and <a href="https://chat.deepseek.com/">DeekSeek</a> AI.
+Kubernetes Pods created with the help of <a href="https://claude.ai/">Claude</a> and <a href="https://chat.deepseek.com/">DeekSeek</a> AI.
 
 ## Users and passwords
 
 ### <em>You will find the credentials and the information you need in .yml files.</em>
 
 ## For your information
-<em>Some pods take a while to appear, so be patient.</em><br>
+<em>Some pods take a while to start, so be patient.</em><br>
 <em>Feel free to contact me if you see any issue.</em>
 
 ## - Pods
