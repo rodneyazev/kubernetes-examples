@@ -1,0 +1,120 @@
+# Persistent Volume para Apache NiFi
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/nifi-data"
+---
+# Persistent Volume Claim para Apache NiFi
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Apache NiFi Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache-nifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apache-nifi
+  template:
+    metadata:
+      labels:
+        app: apache-nifi
+    spec:
+      containers:
+        - name: apache-nifi
+          image: apache/nifi:1.24.0
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: NIFI_WEB_HTTP_PORT
+              value: "8080"
+            - name: NIFI_WEB_HTTP_HOST
+              value: "0.0.0.0"
+            - name: SINGLE_USER_CREDENTIALS_USERNAME
+              value: "admin"
+            - name: SINGLE_USER_CREDENTIALS_PASSWORD
+              value: "admin12345"
+          volumeMounts:
+            - name: nifi-data
+              mountPath: /opt/nifi/data
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          startupProbe:
+            httpGet:
+              path: /nifi
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /nifi
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /nifi
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: nifi-data
+          persistentVolumeClaim:
+            claimName: nifi-pvc
+---
+# Apache NiFi Service (NodePort para acesso externo)
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache-nifi
+spec:
+  type: NodePort
+  selector:
+    app: apache-nifi
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+      name: http
+---
+# Apache NiFi Service (LoadBalancer para acesso externo mais fácil no Docker Desktop)
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache-nifi-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: apache-nifi
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http

@@ -1,0 +1,157 @@
+# kafka-stack.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+---
+# Zookeeper (required for Kafka)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: kafka
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - name: zookeeper
+        image: zookeeper:latest
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOO_MY_ID
+          value: "1"
+        - name: ZOO_SERVERS
+          value: "server.1=zookeeper-0.zookeeper.kafka.svc.cluster.local:2888:3888"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+---
+# Kafka Broker
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: bitnami/kafka:latest
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+          value: "zookeeper.kafka.svc.cluster.local:2181"
+        - name: KAFKA_CFG_LISTENERS
+          value: "PLAINTEXT://:9092"
+        - name: KAFKA_CFG_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka.kafka.svc.cluster.local:9092"
+        - name: ALLOW_PLAINTEXT_LISTENER
+          value: "yes"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /bitnami/kafka
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+# Kafka-UI (Management Dashboard)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+      - name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        env:
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: "local"
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: "kafka.kafka.svc.cluster.local:9092"
+        - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+          value: "zookeeper.kafka.svc.cluster.local:2181"
+        ports:
+        - containerPort: 8080
+---
+# Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: kafka
+spec:
+  clusterIP: None
+  selector:
+    app: zookeeper
+  ports:
+  - port: 2181
+    name: client
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  clusterIP: None
+  selector:
+    app: kafka
+  ports:
+  - port: 9092
+    name: broker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+  namespace: kafka
+spec:
+  type: NodePort
+  selector:
+    app: kafka-ui
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 31080

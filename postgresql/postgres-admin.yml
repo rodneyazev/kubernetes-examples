@@ -1,0 +1,137 @@
+---
+# PostgreSQL StatefulSet (2 réplicas com dados persistentes)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 2
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        env:
+        - name: POSTGRES_DB
+          value: "postgres"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+
+---
+# Serviço Headless para PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# Job para criar a tabela 'users' e inserir dados
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-init-db
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: postgres-client
+        image: postgres:latest
+        env:
+        - name: PGHOST
+          value: "postgres"
+        - name: PGDATABASE
+          value: "postgres"
+        - name: PGUSER
+          value: "postgres"
+        - name: PGPASSWORD
+          value: "postgres"
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            # Espera o PostgreSQL ficar pronto
+            until pg_isready -h postgres -U postgres -d postgres -t 1; do sleep 1; done
+
+            # Cria a tabela e insere usuários
+            psql <<EOF
+            CREATE TABLE IF NOT EXISTS users (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(100) NOT NULL,
+              email VARCHAR(100) UNIQUE NOT NULL
+            );
+            INSERT INTO users (name, email) VALUES
+              ('João Silva', 'joao@example.com'),
+              ('Maria Santos', 'maria@example.com'),
+              ('Carlos Oliveira', 'carlos@example.com')
+            ON CONFLICT (email) DO NOTHING;
+            EOF
+
+---
+# Deployment do pgAdmin
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+spec:
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - name: pgadmin
+        image: dpage/pgadmin4
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: "admin@admin.com"
+        - name: PGADMIN_DEFAULT_PASSWORD
+          value: "admin"
+        ports:
+        - containerPort: 80
+
+---
+# Serviço NodePort para pgAdmin (acesso via navegador)
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin
+spec:
+  type: NodePort
+  selector:
+    app: pgadmin
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30000

@@ -1,0 +1,179 @@
+# Persistent Volume para MySQL
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/mysql-data"
+---
+# Persistent Volume Claim para MySQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Secrets para MySQL
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secrets
+type: Opaque
+data:
+  mysql-root-password: cm9vdHBhc3N3b3Jk     # rootpassword
+  mysql-user-password: bWFudGlzcGFzc3dvcmQ=  # mantispassword
+---
+# MySQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:5.7
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secrets
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              value: mantisbt
+            - name: MYSQL_USER
+              value: mantisbt
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secrets
+                  key: mysql-user-password
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+---
+# MySQL Service (Interno)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+# Mantis Bug Tracker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mantisbt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mantisbt
+  template:
+    metadata:
+      labels:
+        app: mantisbt
+    spec:
+      containers:
+        - name: mantisbt
+          image: vimagick/mantisbt:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: MYSQL_HOST
+              value: mysql
+            - name: MYSQL_DATABASE
+              value: mantisbt
+            - name: MYSQL_USER
+              value: mantisbt
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secrets
+                  key: mysql-user-password
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+# Mantis Bug Tracker Service (NodePort para acesso externo)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mantisbt
+spec:
+  type: NodePort
+  selector:
+    app: mantisbt
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+---
+# Mantis Bug Tracker Service (LoadBalancer para acesso externo mais fácil no Docker Desktop)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mantisbt-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: mantisbt
+  ports:
+    - port: 80
+      targetPort: 80

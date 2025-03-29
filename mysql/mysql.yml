@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-pod
+  labels:
+    app: mysql
+spec:
+  containers:
+  - name: mysql
+    image: mysql:latest
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "MySQL@3306"  # Altere para uma senha segura
+    - name: MYSQL_USER
+      value: "mysql"
+    - name: MYSQL_PASSWORD
+      value: "mysql"
+    - name: MYSQL_DATABASE
+      value: "mysql"      # Opcional: cria um banco inicial
+    ports:
+    - containerPort: 3306
+      hostPort: 3306         # Expõe na porta 3306 do host
+    volumeMounts:
+    - name: mysql-data
+      mountPath: /var/lib/mysql
+  volumes:
+  - name: mysql-data
+    hostPath:
+      path: /tmp/mysql-data  # Altere para um caminho permanente se necessário
+      type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+      name: http

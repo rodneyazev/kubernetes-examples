@@ -1,0 +1,80 @@
+# mongodb-deployment.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-init
+data:
+  init.js: |
+    db = db.getSiblingDB('mongodb');
+    db.createCollection('mongodb');
+    print('Database "mongodb" and collection "mongodb" created successfully');
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  labels:
+    app: mongodb
+spec:
+  replicas: 1 # 1 is default. We can remove this entry.
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:latest
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: mongodb
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: mongodb
+        - name: MONGO_INITDB_DATABASE
+          value: mongodb
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        - name: mongodb-init
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
+      - name: mongodb-init
+        configMap:
+          name: mongodb-init
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Liberado acesso direto pela porta 27017
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+spec:
+  type: LoadBalancer
+  selector:
+    app: mongodb
+  ports:
+    - port: 27017
+      targetPort: 27017
+      name: http
