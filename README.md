@@ -336,3 +336,15 @@ http://localhost:30411/
 http://localhost:9411/
 ```
 
+## - Sonarqube
+
+```bash
+# Sonarqube URL & First Login Credentials (admin/admin)
+http://localhost:30001
+
+# pgAdmin URL
+http://localhost:30002
+
+# Hostname/address
+postgres
+```

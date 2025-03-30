@@ -1,0 +1,157 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        env:
+        - name: POSTGRES_USER
+          value: sonar
+        - name: POSTGRES_PASSWORD
+          value: sonar
+        - name: POSTGRES_DB
+          value: sonar
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      containers:
+      - name: sonarqube
+        image: sonarqube:latest
+        env:
+        - name: SONAR_JDBC_URL
+          value: jdbc:postgresql://postgres:5432/sonar
+        - name: SONAR_JDBC_USERNAME
+          value: sonar
+        - name: SONAR_JDBC_PASSWORD
+          value: sonar
+        ports:
+        - containerPort: 9000
+        volumeMounts:
+        - name: sonarqube-data
+          mountPath: /opt/sonarqube/data
+        - name: sonarqube-extensions
+          mountPath: /opt/sonarqube/extensions
+      volumes:
+      - name: sonarqube-data
+        persistentVolumeClaim:
+          claimName: sonarqube-pvc
+      - name: sonarqube-extensions
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarqube
+spec:
+  type: NodePort
+  ports:
+  - port: 9000
+    targetPort: 9000
+    nodePort: 30001
+  selector:
+    app: sonarqube
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - name: pgadmin
+        image: dpage/pgadmin4:latest
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: admin@admin.com
+        - name: PGADMIN_DEFAULT_PASSWORD
+          value: admin
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgadmin
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30002
+  selector:
+    app: pgadmin
