@@ -346,5 +346,5 @@ http://localhost:30001
 http://localhost:30002
 
 # Hostname/address
-postgres
+postgres 
 ```
