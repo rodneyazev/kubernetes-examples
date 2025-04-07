@@ -317,6 +317,13 @@ http://localhost:31672/
 kubectl exec -n redis -it deploy/redis -- redis-cli ping
 ```
 
+## - Memcached
+
+```bash
+# Checkout
+kubectl exec memcached -- bash -c "echo stats | nc -w 1 localhost 11211"
+```
+
 ## - Redmine
 
 ```bash
