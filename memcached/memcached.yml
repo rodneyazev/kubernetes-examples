@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memcached
+spec:
+  containers:
+  - name: memcached
+    image: bitnami/memcached:latest
+    env:
+    - name: MEMCACHED_CACHE_SIZE
+      value: "64"  # 64MB memory limit
+    - name: MEMCACHED_MAX_CONNECTIONS
+      value: "1024"
+    ports:
+    - containerPort: 11211
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+    livenessProbe:
+      tcpSocket:
+        port: 11211
+      initialDelaySeconds: 30
+    readinessProbe:
+      tcpSocket:
+        port: 11211
+      initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcached-service
+spec:
+  selector:
+    app: memcached
+  ports:
+    - protocol: TCP
+      port: 11211
+      targetPort: 11211
