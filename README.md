@@ -10,6 +10,10 @@ Kubernetes Pods created with the help of <a href="https://claude.ai/">Claude</a>
 
 ### <em>You will find the credentials and further information in .yml files.</em>
 
+## IMPORTANT
+<em>In case of port conflict (e.g. 8080), configure the container port according to your needs.</em>
+
+<em>Some containers take a while (~2-5 minutes) to initialize (like GitLab).</em>
 ## For your information
 <em>Some pods take a while to start, so be patient.</em><br>
 <em>Feel free to contact me if you see any issue.</em>
@@ -100,6 +104,21 @@ http://localhost:30086/api/v2
 ```bash
 # URL
 http://localhost:30080/
+```
+
+## - GitLab
+
+```bash
+# URLs
+GitLab: http://localhost:30080/
+Runners: http://localhost:30080/admin/runners
+
+# Login
+User: root
+
+# To obtain Password
+
+kubectl exec -it $(kubectl get pods -l app=gitlab -o jsonpath='{.items[0].metadata.name}') -- grep 'Password:' /etc/gitlab/initial_root_password
 ```
 
 ## - Kafka
