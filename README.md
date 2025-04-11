@@ -99,6 +99,16 @@ http://localhost:30086
 http://localhost:30086/api/v2
 ```
 
+## - H2
+
+```bash
+# Web UI
+http://localhost:30081/
+
+Username: sa
+Password: <empty>
+```
+
 ## - Jenkins
 
 ```bash

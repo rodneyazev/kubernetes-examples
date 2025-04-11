@@ -1,0 +1,101 @@
+# h2-storage.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: h2-pv
+spec:
+  storageClassName: ""
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/h2-data
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: h2-data-pvc
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: h2-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: h2-database
+  template:
+    metadata:
+      labels:
+        app: h2-database
+    spec:
+      containers:
+      - name: h2
+        image: oscarfonts/h2
+        env:
+        - name: H2_OPTIONS
+          value: "-ifNotExists -web -webAllowOthers -webPort 81"
+        - name: JAVA_OPTS
+          value: "-Xmx512m"
+        ports:
+        - containerPort: 1521  # JDBC port
+        - containerPort: 81    # Web console (mapped to 8181)
+        volumeMounts:
+        - name: h2-data
+          mountPath: /opt/h2-data
+      volumes:
+      - name: h2-data
+        persistentVolumeClaim:
+          claimName: h2-data-pvc
+
+---
+# h2-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: h2-service
+spec:
+  type: NodePort  # Change from ClusterIP
+  selector:
+    app: h2-database
+  ports:
+    - name: jdbc
+      port: 1521
+      targetPort: 1521
+    - name: web-console
+      port: 8181
+      targetPort: 81
+      nodePort: 30081  # Optional: Fix a NodePort (30000-32767)
+---
+# Ingress (Optional - for web console external access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: h2-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: h2.example.com  # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: h2-service
+            port:
+              number: 8181
